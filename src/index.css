@@ -2,6 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: 218 25% 6%;
+    --foreground: 218 20% 95%;
+    --card: 218 25% 8%;
+    --card-foreground: 218 20% 92%;
+    --popover: 218 25% 8%;
+    --popover-foreground: 218 20% 92%;
+    --primary: 266 100% 65%;
+    --primary-foreground: 218 20% 95%;
+    --primary-glow: 266 100% 75%;
+    --secondary: 218 15% 12%;
+    --secondary-foreground: 218 20% 88%;
+    --muted: 218 15% 10%;
+    --muted-foreground: 218 10% 60%;
+    --accent: 192 100% 60%;
+    --accent-foreground: 218 20% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 218 20% 95%;
+    --border: 218 15% 15%;
+    --input: 218 15% 15%;
+    --ring: 266 100% 65%;
+    --radius: 0.75rem;
+    
+    /* Custom colors for AI interview platform */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.3);
+    --shadow-subtle: 0 4px 20px hsl(var(--background) / 0.5);
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 266 100% 50%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 266 100% 60%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 192 100% 50%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 266 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+  
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-sm border border-border/50;
+  }
+  
+  .glow-effect {
+    box-shadow: var(--shadow-glow);
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
