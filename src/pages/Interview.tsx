@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Brain, ArrowLeft, Mic, MicOff, Square, Play, MessageSquare, Clock } from "lucide-react";
+import { Brain, ArrowLeft, Mic, MicOff, Square, Play, MessageSquare, Clock, Phone, User, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import VoiceAgent from "@/components/voice/VoiceAgent";
 
 // Mock interview data
 const mockInterview = {
@@ -29,6 +31,8 @@ const Interview = () => {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewEnded, setInterviewEnded] = useState(false);
   const [transcript, setTranscript] = useState<string[]>([]);
+  const [useVoiceAgent, setUseVoiceAgent] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -53,7 +57,9 @@ const Interview = () => {
     setInterviewStarted(true);
     toast({
       title: "Interview Started!",
-      description: "Good luck! The AI interviewer will ask you questions.",
+      description: useVoiceAgent 
+        ? `Good luck${userInfo.name ? `, ${userInfo.name}` : ''}! Your AI voice coach is ready.`
+        : "Good luck! The AI interviewer will ask you questions.",
     });
   };
 
@@ -133,12 +139,61 @@ const Interview = () => {
               </div>
 
               <div className="space-y-4">
+                <h3 className="font-semibold">Interview Options:</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setUseVoiceAgent(false)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      !useVoiceAgent 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border bg-secondary/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      <span className="font-medium">Text Interview</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Traditional text-based interview experience
+                    </p>
+                  </motion.div>
+                  
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setUseVoiceAgent(true)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      useVoiceAgent 
+                        ? 'border-accent bg-accent/10' 
+                        : 'border-border bg-secondary/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Mic className="w-4 h-4" />
+                      <span className="font-medium">Voice Interview</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      AI-powered voice coaching experience
+                    </p>
+                  </motion.div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
                 <h3 className="font-semibold">Interview Tips:</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• Speak clearly and at a moderate pace</li>
                   <li>• Take your time to think before answering</li>
                   <li>• Use the STAR method for behavioral questions</li>
                   <li>• Ask clarifying questions if needed</li>
+                  {useVoiceAgent && (
+                    <>
+                      <li>• The AI will personalize responses based on your information</li>
+                      <li>• Say "human agent" if you need to escalate to support</li>
+                    </>
+                  )}
                 </ul>
               </div>
 
@@ -146,8 +201,17 @@ const Interview = () => {
                 onClick={handleStartInterview}
                 className="w-full bg-gradient-primary text-lg py-6"
               >
-                <Play className="w-5 h-5 mr-2" />
-                Start Interview
+                {useVoiceAgent ? (
+                  <>
+                    <Phone className="w-5 h-5 mr-2" />
+                    Start Voice Interview
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5 mr-2" />
+                    Start Interview
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -195,53 +259,115 @@ const Interview = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Interview Area */}
           <div className="lg:col-span-2">
-            <Card className="glass-card h-full">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Question {currentQuestion + 1} of {mockInterview.questions.length}</CardTitle>
-                  <Progress value={(currentQuestion / mockInterview.questions.length) * 100} className="w-32" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="p-6 bg-secondary/20 rounded-lg border border-border/50">
-                  <h3 className="text-lg font-semibold mb-4 text-primary">AI Interviewer:</h3>
-                  <p className="text-lg leading-relaxed">
-                    {mockInterview.questions[currentQuestion]}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-center gap-4">
-                  <Button
-                    size="lg"
-                    variant={isRecording ? "destructive" : "default"}
-                    onClick={handleToggleRecording}
-                    className={`w-20 h-20 rounded-full ${isRecording ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-gradient-primary'}`}
-                  >
-                    {isRecording ? (
-                      <MicOff className="w-8 h-8" />
-                    ) : (
-                      <Mic className="w-8 h-8" />
+            {useVoiceAgent ? (
+              <Card className="glass-card h-full">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="w-5 h-5 text-primary" />
+                    Voice Interview Session
+                    {userInfo.name && (
+                      <Badge variant="secondary">
+                        Welcome, {userInfo.name}!
+                      </Badge>
                     )}
-                  </Button>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {isRecording ? "Recording your response..." : "Click the microphone to start recording"}
-                  </p>
-                </div>
-
-                <div className="flex justify-center">
-                  <Button 
-                    onClick={handleNextQuestion}
-                    disabled={transcript.length <= currentQuestion}
-                    variant="outline"
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-secondary/20 rounded-lg border border-border/50"
                   >
-                    {currentQuestion < mockInterview.questions.length - 1 ? "Next Question" : "Finish Interview"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    <h3 className="text-lg font-semibold mb-4 text-primary flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      AI Voice Coach:
+                    </h3>
+                    <p className="text-lg leading-relaxed">
+                      I'm your personal AI interview coach. I'll help you practice with natural conversation, 
+                      provide real-time feedback, and adapt to your specific needs. Let's start by getting to know each other!
+                    </p>
+                  </motion.div>
+
+                  <div className="flex items-center justify-center">
+                    <VoiceAgent onUserInfoCollected={setUserInfo} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button 
+                      onClick={handleNextQuestion}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {currentQuestion < mockInterview.questions.length - 1 ? "Next Topic" : "Complete Session"}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Human Support
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="glass-card h-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Question {currentQuestion + 1} of {mockInterview.questions.length}</CardTitle>
+                    <Progress value={(currentQuestion / mockInterview.questions.length) * 100} className="w-32" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-secondary/20 rounded-lg border border-border/50"
+                  >
+                    <h3 className="text-lg font-semibold mb-4 text-primary">AI Interviewer:</h3>
+                    <p className="text-lg leading-relaxed">
+                      {mockInterview.questions[currentQuestion]}
+                    </p>
+                  </motion.div>
+
+                  <div className="flex items-center justify-center gap-4">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        size="lg"
+                        variant={isRecording ? "destructive" : "default"}
+                        onClick={handleToggleRecording}
+                        className={`w-20 h-20 rounded-full ${isRecording ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-gradient-primary'}`}
+                      >
+                        {isRecording ? (
+                          <MicOff className="w-8 h-8" />
+                        ) : (
+                          <Mic className="w-8 h-8" />
+                        )}
+                      </Button>
+                    </motion.div>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      {isRecording ? "Recording your response..." : "Click the microphone to start recording"}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={handleNextQuestion}
+                      disabled={transcript.length <= currentQuestion}
+                      variant="outline"
+                    >
+                      {currentQuestion < mockInterview.questions.length - 1 ? "Next Question" : "Finish Interview"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
