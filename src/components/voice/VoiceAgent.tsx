@@ -117,11 +117,11 @@ const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
   }
 
   return (
-    <Card className="glass-card w-full max-w-md">
+    <Card className="glass-card-elevated w-full max-w-md hover-lift interactive-scale">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-primary" />
-          AI Voice Assistant
+          <MessageSquare className="w-5 h-5 text-primary animate-pulse-glow" />
+          <span className="gradient-text">AI Voice Assistant</span>
         </CardTitle>
         <CardDescription>
           Your personal interview preparation coach
@@ -173,10 +173,10 @@ const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
               repeat: isConnected ? Infinity : 0,
               ease: "easeInOut"
             }}
-            className={`w-20 h-20 rounded-full flex items-center justify-center ${
+            className={`w-20 h-20 rounded-full flex items-center justify-center glow-effect ${
               isConnected
-                ? 'bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/25'
-                : 'bg-gradient-primary'
+                ? 'bg-gradient-to-r from-green-500 to-green-600 animate-pulse-glow'
+                : 'bg-gradient-primary animate-float'
             }`}
           >
             {isLoading ? (
@@ -213,7 +213,7 @@ const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
             <Button
               onClick={handleStartCall}
               disabled={isLoading}
-              className="col-span-2 bg-gradient-primary"
+              className="col-span-2 bg-gradient-primary hover-lift interactive-scale glow-effect"
             >
               <PhoneCall className="w-4 h-4 mr-2" />
               Start Call
