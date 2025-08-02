@@ -20,16 +20,16 @@ const Header = () => {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link to="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
-            <Link to="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </Link>
-            <Link to="#about" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
               About
             </Link>
-            <Link to="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
               Contact
             </Link>
           </nav>
@@ -59,16 +59,16 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-border/50 py-4">
             <nav className="flex flex-col gap-4">
-              <Link to="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
                 Features
               </Link>
-              <Link to="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
                 Pricing
               </Link>
-              <Link to="#about" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
                 About
               </Link>
-              <Link to="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
                 Contact
               </Link>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">

@@ -22,6 +22,7 @@ interface VapiHookReturn {
 }
 
 export const useVapi = (apiKey?: string): VapiHookReturn => {
+  const defaultApiKey = apiKey || localStorage.getItem('vapi_api_key') || '';
   const [vapi, setVapi] = useState<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,8 +30,8 @@ export const useVapi = (apiKey?: string): VapiHookReturn => {
   const [transcript, setTranscript] = useState<string[]>([]);
 
   useEffect(() => {
-    if (apiKey) {
-      const vapiInstance = new Vapi(apiKey);
+    if (defaultApiKey) {
+      const vapiInstance = new Vapi(defaultApiKey);
       setVapi(vapiInstance);
 
       // Event listeners
@@ -73,7 +74,7 @@ export const useVapi = (apiKey?: string): VapiHookReturn => {
         vapiInstance.stop();
       };
     }
-  }, [apiKey]);
+  }, [defaultApiKey]);
 
   const extractUserInfo = useCallback((text: string) => {
     const lowerText = text.toLowerCase();

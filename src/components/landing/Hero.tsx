@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Hero = () => {
@@ -49,9 +49,9 @@ const Hero = () => {
               className="text-lg px-8 py-6 glass-card hover:bg-secondary/80"
               asChild
             >
-              <Link to="#demo">
-                <PlayCircle className="mr-2 w-5 h-5" />
-                Watch Demo
+              <Link to="/features">
+                <Sparkles className="mr-2 w-5 h-5" />
+                Explore Features
               </Link>
             </Button>
           </div>
