@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import InterviewAnalytics from "@/components/advanced/InterviewAnalytics";
 import VoiceAgent from "@/components/voice/VoiceAgent";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock data
 const recentInterviews = [
@@ -38,9 +39,10 @@ const recentInterviews = [
 ];
 
 const Dashboard = () => {
-  const [userName] = useState("John Doe");
+  const { user, profile } = useAuth();
   const [userInfo, setUserInfo] = useState<any>({});
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const userName = profile?.full_name || user?.email?.split('@')[0] || "User";
 
   const containerVariants = {
     hidden: { opacity: 0 },

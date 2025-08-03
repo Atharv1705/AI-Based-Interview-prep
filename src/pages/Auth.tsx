@@ -1,68 +1,88 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { Brain, Mail, Lock, User, Eye, EyeOff, Github, Chrome } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Brain, Mail, Lock, User, Eye, EyeOff, Github, Chrome, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    name: ''
+    fullName: ''
   });
+  
+  const { signIn, signUp, user } = useAuth();
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate authentication
-    setTimeout(() => {
-      toast({
-        title: "Welcome back!",
-        description: "You've been signed in successfully.",
-      });
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
       navigate('/dashboard');
-      setIsLoading(false);
-    }, 1500);
+    }
+  }, [user, navigate]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, type: 'login' | 'signup') => {
     e.preventDefault();
+    setLoading(true);
     
-    if (formData.password !== formData.confirmPassword) {
+    try {
+      if (type === 'signup') {
+        if (formData.password !== formData.confirmPassword) {
+          toast({
+            title: "Error",
+            description: "Passwords do not match",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (formData.password.length < 6) {
+          toast({
+            title: "Error",
+            description: "Password must be at least 6 characters",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        await signUp(formData.email, formData.password, formData.fullName);
+        toast({
+          title: "Success",
+          description: "Account created successfully! Please check your email to verify your account.",
+        });
+      } else {
+        await signIn(formData.email, formData.password);
+        toast({
+          title: "Success",
+          description: "Logged in successfully!",
+        });
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Passwords do not match.",
-        variant: "destructive"
+        description: error.message || "An error occurred",
+        variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-    
-    setIsLoading(true);
-    
-    // Simulate registration
-    setTimeout(() => {
-      toast({
-        title: "Account created!",
-        description: "Welcome to PrepWise. Let's start your interview preparation journey.",
-      });
-      navigate('/dashboard');
-      setIsLoading(false);
-    }, 1500);
   };
 
   const handleSocialAuth = (provider: string) => {
@@ -106,7 +126,7 @@ const Auth = () => {
               
               {/* Sign In Tab */}
               <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={(e) => handleSubmit(e, 'login')} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
                     <div className="relative">
@@ -117,7 +137,8 @@ const Auth = () => {
                         placeholder="your.email@example.com"
                         className="pl-10"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={handleInputChange}
+                        name="email"
                         required
                       />
                     </div>
@@ -133,7 +154,8 @@ const Auth = () => {
                         placeholder="Enter your password"
                         className="pl-10 pr-10"
                         value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        onChange={handleInputChange}
+                        name="password"
                         required
                       />
                       <Button
@@ -158,15 +180,22 @@ const Auth = () => {
                     </Link>
                   </div>
                   
-                  <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
+                  <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
                   </Button>
                 </form>
               </TabsContent>
               
               {/* Sign Up Tab */}
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={(e) => handleSubmit(e, 'signup')} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <div className="relative">
@@ -176,8 +205,9 @@ const Auth = () => {
                         type="text"
                         placeholder="Your full name"
                         className="pl-10"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        name="fullName"
                         required
                       />
                     </div>
@@ -193,7 +223,8 @@ const Auth = () => {
                         placeholder="your.email@example.com"
                         className="pl-10"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={handleInputChange}
+                        name="email"
                         required
                       />
                     </div>
@@ -209,7 +240,8 @@ const Auth = () => {
                         placeholder="Create a password"
                         className="pl-10 pr-10"
                         value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        onChange={handleInputChange}
+                        name="password"
                         required
                       />
                       <Button
@@ -234,7 +266,8 @@ const Auth = () => {
                         placeholder="Confirm your password"
                         className="pl-10"
                         value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        onChange={handleInputChange}
+                        name="confirmPassword"
                         required
                       />
                     </div>
@@ -247,8 +280,15 @@ const Auth = () => {
                     <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                   </div>
                   
-                  <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
+                  <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
                   </Button>
                 </form>
               </TabsContent>

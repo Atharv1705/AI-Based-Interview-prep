@@ -22,7 +22,7 @@ interface VapiHookReturn {
 }
 
 export const useVapi = (apiKey?: string): VapiHookReturn => {
-  const defaultApiKey = apiKey || localStorage.getItem('vapi_api_key') || '';
+  const defaultApiKey = apiKey || localStorage.getItem('vapi_api_key') || 'https://api.vapi.ai/call';
   const [vapi, setVapi] = useState<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
