@@ -305,24 +305,7 @@ const Auth = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleSocialAuth('Google')}
-                  className="w-full"
-                >
-                  <Chrome className="w-4 h-4 mr-2" />
-                  Google
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleSocialAuth('GitHub')}
-                  className="w-full"
-                >
-                  <Github className="w-4 h-4 mr-2" />
-                  GitHub
-                </Button>
-              </div>
+              <SocialAuthButtons />
             </div>
           </CardContent>
         </Card>
