@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Brain, Mail, Lock, User, Eye, EyeOff, Github, Chrome, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 
 const Auth = () => {
   const navigate = useNavigate();
