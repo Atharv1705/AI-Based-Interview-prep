@@ -1,6 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase, Profile } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+
+export type Profile = {
+  id: string
+  email: string
+  full_name: string | null
+  avatar_url: string | null
+  created_at: string
+  updated_at: string
+  interview_count: number
+  total_practice_time: number
+  skill_level: 'beginner' | 'intermediate' | 'advanced'
+  preferred_industries: string[]
+  notification_preferences: any
+}
 
 interface AuthContextType {
   user: User | null
@@ -51,18 +65,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('Error fetching profile:', error)
-        return
+      // For now, create a mock profile until database is ready
+      const mockProfile: Profile = {
+        id: userId,
+        email: user?.email || '',
+        full_name: user?.user_metadata?.full_name || null,
+        avatar_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        interview_count: 0,
+        total_practice_time: 0,
+        skill_level: 'beginner',
+        preferred_industries: [],
+        notification_preferences: {}
       }
-
-      setProfile(data)
+      setProfile(mockProfile)
     } catch (error) {
       console.error('Error fetching profile:', error)
     }
@@ -81,14 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) throw error
 
-    // Create profile
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        email: data.user.email,
-        full_name: fullName,
-      })
-    }
+    // Profile will be created by database trigger once migration is applied
 
     return data
   }
@@ -133,13 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) throw new Error('No user logged in')
 
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', user.id)
-
-    if (error) throw error
-
+    // For now, just update local state until database is ready
     setProfile(prev => prev ? { ...prev, ...updates } : null)
   }
 

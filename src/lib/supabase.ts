@@ -1,16 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-
-// Using Lovable's native Supabase integration - credentials are automatically provided
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-})
+// Re-export the properly configured supabase client
+export { supabase } from "@/integrations/supabase/client";
 
 export type Profile = {
   id: string

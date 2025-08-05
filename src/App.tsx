@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NewInterview from "./pages/NewInterview";
+import { InterviewSession } from "./pages/InterviewSession";
 import Interview from "./pages/Interview";
 import Practice from "./pages/Practice";
 import Interviews from "./pages/Interviews";
@@ -37,7 +38,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/interview/new" element={<NewInterview />} />
-              <Route path="/interview/:id" element={<Interview />} />
+          <Route path="/interview/:id" element={<Interview />} />
+          <Route path="/interview/:id/session" element={<InterviewSession />} />
               <Route path="/practice" element={<Practice />} />
               <Route path="/interviews" element={<Interviews />} />
               <Route path="/profile" element={<Profile />} />

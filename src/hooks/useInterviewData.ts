@@ -1,10 +1,36 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { Database } from '@/lib/database.types'
+import { Database } from '@/integrations/supabase/types'
 
-type Interview = Database['public']['Tables']['interviews']['Row']
-type Question = Database['public']['Tables']['questions']['Row']
+// Define types based on the database schema
+type Interview = {
+  id: string
+  user_id: string
+  title: string
+  type: 'technical' | 'behavioral' | 'case_study' | 'general'
+  industry: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  duration: number
+  score: number | null
+  feedback: any | null
+  transcript: string | null
+  created_at: string
+  updated_at: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+}
+
+type Question = {
+  id: string
+  category: string
+  industry: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  question_text: string
+  expected_keywords: string[]
+  sample_answer: string | null
+  created_at: string
+  updated_at: string
+}
 
 export const useInterviewData = () => {
   const { user } = useAuth()
@@ -17,14 +43,25 @@ export const useInterviewData = () => {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from('interviews')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setInterviews(data || [])
+      // Mock interviews until database is ready
+      const mockInterviews: Interview[] = [
+        {
+          id: '1',
+          user_id: user.id,
+          title: 'Technical Interview - Frontend Developer',
+          type: 'technical',
+          industry: 'Technology',
+          difficulty: 'intermediate',
+          duration: 45,
+          score: 85,
+          feedback: { strengths: ['Good problem solving'], areas: ['Communication'] },
+          transcript: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          status: 'completed'
+        }
+      ]
+      setInterviews(mockInterviews)
     } catch (err: any) {
       setError(err.message)
     }
@@ -32,38 +69,41 @@ export const useInterviewData = () => {
 
   const fetchQuestions = async (category?: string, industry?: string, difficulty?: string) => {
     try {
-      let query = supabase.from('questions').select('*')
-      
-      if (category) query = query.eq('category', category)
-      if (industry) query = query.eq('industry', industry)
-      if (difficulty) query = query.eq('difficulty', difficulty)
-
-      const { data, error } = await query.order('created_at', { ascending: false })
-
-      if (error) throw error
-      setQuestions(data || [])
+      // Mock questions until database is ready
+      const mockQuestions: Question[] = [
+        {
+          id: '1',
+          category: 'technical',
+          industry: 'Technology',
+          difficulty: 'intermediate',
+          question_text: 'Explain the difference between let, const, and var in JavaScript.',
+          expected_keywords: ['hoisting', 'scope', 'temporal dead zone'],
+          sample_answer: 'let and const are block-scoped while var is function-scoped...',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+      setQuestions(mockQuestions)
     } catch (err: any) {
       setError(err.message)
     }
   }
 
-  const createInterview = async (interviewData: Omit<Interview, 'id' | 'created_at' | 'updated_at'>) => {
+  const createInterview = async (interviewData: Omit<Interview, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     if (!user) throw new Error('User not authenticated')
 
     try {
-      const { data, error } = await supabase
-        .from('interviews')
-        .insert({
-          ...interviewData,
-          user_id: user.id
-        })
-        .select()
-        .single()
-
-      if (error) throw error
+      // Mock creation until database is ready
+      const newInterview: Interview = {
+        id: Date.now().toString(),
+        user_id: user.id,
+        ...interviewData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
       
-      setInterviews(prev => [data, ...prev])
-      return data
+      setInterviews(prev => [newInterview, ...prev])
+      return newInterview
     } catch (err: any) {
       setError(err.message)
       throw err
@@ -72,20 +112,13 @@ export const useInterviewData = () => {
 
   const updateInterview = async (id: string, updates: Partial<Interview>) => {
     try {
-      const { data, error } = await supabase
-        .from('interviews')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
-
+      // Mock update until database is ready
       setInterviews(prev => prev.map(interview => 
-        interview.id === id ? { ...interview, ...data } : interview
+        interview.id === id ? { ...interview, ...updates, updated_at: new Date().toISOString() } : interview
       ))
       
-      return data
+      const updatedInterview = interviews.find(i => i.id === id)
+      return updatedInterview
     } catch (err: any) {
       setError(err.message)
       throw err

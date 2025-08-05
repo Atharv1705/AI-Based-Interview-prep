@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mic, MicOff, Phone, PhoneCall, User, MapPin, MessageSquare, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVapi } from '@/hooks/useVapi';
+import { useVapiFixed as useVapi } from '@/hooks/useVapiFixed';
 import { useToast } from '@/hooks/use-toast';
 
 interface VoiceAgentProps {
