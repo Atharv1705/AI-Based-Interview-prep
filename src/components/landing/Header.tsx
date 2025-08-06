@@ -112,6 +112,12 @@ const Header = () => {
                       Profile
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -120,14 +126,9 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link to="/auth">Login</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/auth">Get Started</Link>
-                </Button>
-              </>
+              <Button asChild>
+                <Link to="/auth">Get Started</Link>
+              </Button>
             )}
           </div>
           
@@ -193,14 +194,9 @@ const Header = () => {
                     </Button>
                   </>
                 ) : (
-                  <>
-                    <Button variant="ghost" asChild>
-                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>Login</Link>
-                    </Button>
-                    <Button asChild>
-                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
-                    </Button>
-                  </>
+                  <Button asChild>
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                  </Button>
                 )}
               </div>
             </nav>

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mic, MicOff, Phone, PhoneCall, User, MapPin, MessageSquare, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVapiFixed as useVapi } from '@/hooks/useVapiFixed';
+import { useVapi } from '@/hooks/useVapi';
 import { useToast } from '@/hooks/use-toast';
 
 interface VoiceAgentProps {
@@ -15,8 +15,6 @@ interface VoiceAgentProps {
 }
 
 const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
-  const [apiKey, setApiKey] = useState<string>('');
-  const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const { toast } = useToast();
 
@@ -30,7 +28,7 @@ const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
     endCall,
     escalateToHuman,
     updateUserInfo
-  } = useVapi(isApiKeySet ? apiKey : undefined);
+  } = useVapi();
 
   useEffect(() => {
     if (userInfo.name || userInfo.city) {
@@ -38,15 +36,6 @@ const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
     }
   }, [userInfo, onUserInfoCollected]);
 
-  const handleSetApiKey = () => {
-    if (apiKey.trim()) {
-      setIsApiKeySet(true);
-      toast({
-        title: "API Key Set",
-        description: "You can now start your voice conversation!",
-      });
-    }
-  };
 
   const handleStartCall = async () => {
     try {
@@ -80,41 +69,6 @@ const VoiceAgent = ({ onUserInfoCollected }: VoiceAgentProps) => {
     });
   };
 
-  if (!isApiKeySet) {
-    return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button size="lg" className="bg-gradient-primary">
-            <Mic className="w-5 h-5 mr-2" />
-            Start Voice Assistant
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Setup Voice Agent</DialogTitle>
-            <DialogDescription>
-              Enter your Vapi.ai API key to enable voice conversations with the AI assistant.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="apiKey">Vapi.ai API Key</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                placeholder="Enter your Vapi.ai API key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleSetApiKey} className="w-full">
-              Set API Key
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Card className="glass-card-elevated w-full max-w-md hover-lift interactive-scale">

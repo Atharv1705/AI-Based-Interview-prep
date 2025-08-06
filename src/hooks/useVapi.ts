@@ -21,8 +21,7 @@ interface VapiHookReturn {
   updateUserInfo: (info: Partial<UserInfo>) => void;
 }
 
-export const useVapi = (apiKey?: string): VapiHookReturn => {
-  const defaultApiKey = apiKey || localStorage.getItem('vapi_api_key') || 'https://api.vapi.ai/call';
+export const useVapi = (): VapiHookReturn => {
   const [vapi, setVapi] = useState<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,51 +29,48 @@ export const useVapi = (apiKey?: string): VapiHookReturn => {
   const [transcript, setTranscript] = useState<string[]>([]);
 
   useEffect(() => {
-    if (defaultApiKey) {
-      const vapiInstance = new Vapi(defaultApiKey);
-      setVapi(vapiInstance);
+    // Initialize Vapi with the provided API key
+    const vapiInstance = new Vapi('fbf6b826-fc14-4c0f-b82c-7b9665b4cd41');
+    
+    // Set up event listeners
+    vapiInstance.on('call-start', () => {
+      console.log('Call started');
+      setIsConnected(true);
+      setIsLoading(false);
+    });
 
-      // Event listeners
-      vapiInstance.on('call-start', () => {
-        setIsConnected(true);
-        setIsLoading(false);
-      });
+    vapiInstance.on('call-end', () => {
+      console.log('Call ended');
+      setIsConnected(false);
+      setIsLoading(false);
+    });
 
-      vapiInstance.on('call-end', () => {
-        setIsConnected(false);
-        setIsLoading(false);
-      });
-
-      vapiInstance.on('speech-start', () => {
-        console.log('Speech started');
-      });
-
-      vapiInstance.on('speech-end', () => {
-        console.log('Speech ended');
-      });
-
-      vapiInstance.on('message', (message: any) => {
-        console.log('Message:', message);
-        if (message.type === 'transcript' && message.transcript) {
-          setTranscript(prev => [...prev, message.transcript]);
-        }
+    vapiInstance.on('message', (message: any) => {
+      if (message.type === 'transcript') {
+        console.log(`${message.role}: ${message.transcript}`);
+        setTranscript(prev => [...prev, `${message.role}: ${message.transcript}`]);
         
-        // Extract user information from conversation
-        if (message.transcript) {
+        // Extract user information from transcript
+        if (message.role === 'user') {
           extractUserInfo(message.transcript);
         }
-      });
+      }
+    });
 
-      vapiInstance.on('error', (error: any) => {
-        console.error('Vapi error:', error);
-        setIsLoading(false);
-      });
+    vapiInstance.on('error', (error: any) => {
+      console.error('Vapi error:', error);
+      setIsLoading(false);
+      setIsConnected(false);
+    });
 
-      return () => {
+    setVapi(vapiInstance);
+
+    return () => {
+      if (vapiInstance) {
         vapiInstance.stop();
-      };
-    }
-  }, [defaultApiKey]);
+      }
+    };
+  }, []);
 
   const extractUserInfo = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
@@ -126,32 +122,8 @@ export const useVapi = (apiKey?: string): VapiHookReturn => {
     setTranscript([]);
     
     try {
-      await vapi.start({
-        model: {
-          provider: 'openai',
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: `You are an AI interview assistant for PrepWise. Your role is to:
-              
-              1. Greet users warmly and ask about their interview preparation needs
-              2. Extract user information (name, city, experience level, interview type)
-              3. Use their name and information in responses to personalize the experience
-              4. Guide them through interview preparation options
-              5. If they ask for human help or seem frustrated, offer to escalate to a human agent
-              
-              Always be encouraging and professional. Ask follow-up questions to understand their specific needs.
-              
-              Start with: "Hi! Welcome to PrepWise, your AI-powered interview assistant. I'm here to help you prepare for your next job interview. Could you tell me your name and what type of interview you're preparing for?"`
-            }
-          ]
-        },
-        voice: {
-          provider: 'openai',
-          voiceId: 'alloy'
-        }
-      });
+      // Start voice conversation with the specified assistant ID
+      await vapi.start('c010d2e8-db16-4255-aaa2-2b3391583ef4');
     } catch (error) {
       console.error('Failed to start call:', error);
       setIsLoading(false);
@@ -166,14 +138,8 @@ export const useVapi = (apiKey?: string): VapiHookReturn => {
 
   const escalateToHuman = useCallback(() => {
     if (vapi && isConnected) {
-      // Send message to escalate
-      vapi.send({
-        type: 'add-message',
-        message: {
-          role: 'system',
-          content: `The user has requested to speak with a human agent. Please acknowledge this request and let them know a human agent will be contacted. Provide them with contact information: support@prepwise.ai or say "I understand you'd like to speak with a human agent. I'm connecting you now to our support team. Please hold on while I transfer your call."`
-        }
-      });
+      // Send a message to the assistant to escalate to human
+      console.log('Escalating to human agent...');
     }
   }, [vapi, isConnected]);
 

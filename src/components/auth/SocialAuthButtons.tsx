@@ -22,11 +22,23 @@ export const SocialAuthButtons = () => {
         description: `Signing in with ${provider}...`,
       })
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || `Failed to sign in with ${provider}`,
-        variant: "destructive",
-      })
+      const errorMessage = error.message || `Failed to sign in with ${provider}`;
+      console.error('Social auth error:', error);
+      
+      // Check for specific error codes
+      if (error.message?.includes('provider is not enabled')) {
+        toast({
+          title: "Provider Not Enabled",
+          description: `${provider} authentication is not enabled. Please contact support or use email authentication.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(null)
     }

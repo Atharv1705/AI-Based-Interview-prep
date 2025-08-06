@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,15 +13,20 @@ import { Brain, User, Settings, Key, Bell, Shield, ArrowLeft, Save, Upload } fro
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const Profile = () => {
+  const { user, profile: userProfile, updateProfile } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    company: "Tech Corp",
-    role: "Software Engineer",
-    experience: "5+ years",
-    bio: "Passionate software engineer with expertise in full-stack development.",
+    name: "",
+    email: "",
+    company: "",
+    role: "",
+    experience: "beginner",
+    bio: "",
     vapiApiKey: "",
     notifications: {
       email: true,
@@ -30,16 +35,66 @@ const Profile = () => {
     }
   });
 
-  const { toast } = useToast();
+  useEffect(() => {
+    if (userProfile && user) {
+      setProfile({
+        name: userProfile.full_name || "",
+        email: user.email || "",
+        company: "",
+        role: "",
+        experience: userProfile.skill_level || "beginner",
+        bio: "",
+        vapiApiKey: localStorage.getItem('vapi_api_key') || "",
+        notifications: {
+          email: true,
+          interview: true,
+          reminders: false
+        }
+      });
+    }
+  }, [userProfile, user]);
 
-  const handleSave = () => {
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+  const handleSave = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.name,
+          company: profile.company,
+          role: profile.role,
+          experience_level: profile.experience,
+          bio: profile.bio,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await updateProfile({
+        full_name: profile.name,
+        skill_level: profile.experience as 'beginner' | 'intermediate' | 'advanced'
+      });
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApiKeySave = () => {
+    localStorage.setItem('vapi_api_key', profile.vapiApiKey);
     toast({
       title: "API Key Saved",
       description: "Your Vapi.ai API key has been securely stored.",
@@ -174,9 +229,9 @@ const Profile = () => {
                     </div>
 
                     <div className="flex justify-end">
-                      <Button onClick={handleSave} className="bg-gradient-primary hover-lift">
+                      <Button onClick={handleSave} disabled={loading} className="bg-gradient-primary hover-lift">
                         <Save className="w-4 h-4 mr-2" />
-                        Save Changes
+                        {loading ? 'Saving...' : 'Save Changes'}
                       </Button>
                     </div>
                   </CardContent>

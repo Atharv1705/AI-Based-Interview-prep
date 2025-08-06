@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, Key, Shield, Bell, User, Mic, Volume2, Save } from "lucide-react";
+import { Brain, Key, Shield, Bell, User, Mic, Volume2, Save, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Settings = () => {
+  const { user, profile: userProfile } = useAuth();
   const { toast } = useToast();
   const [vapiApiKey, setVapiApiKey] = useState('');
   const [profile, setProfile] = useState({
@@ -30,6 +32,25 @@ const Settings = () => {
     autoRecord: false,
     difficulty: 'medium'
   });
+
+  useEffect(() => {
+    if (userProfile) {
+      setProfile({
+        name: userProfile.full_name || '',
+        email: user?.email || '',
+        company: '',
+        role: '',
+        experience: userProfile.skill_level || 'mid-level',
+        bio: ''
+      });
+    }
+    
+    // Load saved API key
+    const savedApiKey = localStorage.getItem('vapi_api_key');
+    if (savedApiKey) {
+      setVapiApiKey(savedApiKey);
+    }
+  }, [userProfile, user]);
 
   const handleSaveApiKey = () => {
     if (vapiApiKey) {
@@ -63,10 +84,13 @@ const Settings = () => {
       <header className="border-b border-border bg-card/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-primary" />
-              <span className="font-bold text-xl gradient-text">PrepWise</span>
-            </Link>
+            <Button variant="ghost" size="icon" asChild>
+              <Link to="/dashboard">
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </Button>
+            <Brain className="w-6 h-6 text-primary" />
+            <span className="font-bold text-xl gradient-text">PrepWise</span>
             <div className="w-px h-6 bg-border" />
             <h1 className="text-2xl font-bold">Settings</h1>
           </div>

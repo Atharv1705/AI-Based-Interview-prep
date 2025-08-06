@@ -65,21 +65,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      // For now, create a mock profile until database is ready
-      const mockProfile: Profile = {
-        id: userId,
-        email: user?.email || '',
-        full_name: user?.user_metadata?.full_name || null,
-        avatar_url: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        interview_count: 0,
-        total_practice_time: 0,
-        skill_level: 'beginner',
-        preferred_industries: [],
-        notification_preferences: {}
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error)
+        return
       }
-      setProfile(mockProfile)
+
+      if (data) {
+        const profile: Profile = {
+          id: data.id,
+          email: user?.email || '',
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          interview_count: 0,
+          total_practice_time: 0,
+          skill_level: (data.experience_level as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
+          preferred_industries: [],
+          notification_preferences: {}
+        }
+        setProfile(profile)
+      }
     } catch (error) {
       console.error('Error fetching profile:', error)
     }
@@ -143,8 +155,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) throw new Error('No user logged in')
 
-    // For now, just update local state until database is ready
-    setProfile(prev => prev ? { ...prev, ...updates } : null)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updates.full_name,
+          avatar_url: updates.avatar_url
+        })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      setProfile(prev => prev ? { ...prev, ...updates } : null)
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      throw error
+    }
   }
 
   const value = {

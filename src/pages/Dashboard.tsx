@@ -102,11 +102,16 @@ const Dashboard = () => {
               >
                 <BarChart3 className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover-lift">
-                <Settings className="w-5 h-5" />
+              <Button variant="ghost" size="icon" asChild className="hover-lift">
+                <Link to="/settings">
+                  <Settings className="w-5 h-5" />
+                </Link>
               </Button>
               <Button variant="ghost" size="icon" asChild className="hover-lift">
-                <Link to="/">
+                <Link to="/" onClick={async () => {
+                  const { signOut } = useAuth();
+                  await signOut();
+                }}>
                   <LogOut className="w-5 h-5" />
                 </Link>
               </Button>

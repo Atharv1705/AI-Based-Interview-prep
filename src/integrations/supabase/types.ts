@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      interviews: {
+        Row: {
+          company: string | null
+          completed_at: string | null
+          created_at: string
+          difficulty: string | null
+          feedback: string | null
+          id: string
+          industry: string | null
+          job_role: string | null
+          overall_score: number | null
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          completed_at?: string | null
+          created_at?: string
+          difficulty?: string | null
+          feedback?: string | null
+          id?: string
+          industry?: string | null
+          job_role?: string | null
+          overall_score?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          completed_at?: string | null
+          created_at?: string
+          difficulty?: string | null
+          feedback?: string | null
+          id?: string
+          industry?: string | null
+          job_role?: string | null
+          overall_score?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company: string | null
+          created_at: string
+          experience_level: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string
+          experience_level?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string
+          experience_level?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          ai_feedback: string | null
+          category: string | null
+          created_at: string
+          expected_answer: string | null
+          id: string
+          interview_id: string
+          question_text: string
+          score: number | null
+          user_response: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          category?: string | null
+          created_at?: string
+          expected_answer?: string | null
+          id?: string
+          interview_id: string
+          question_text: string
+          score?: number | null
+          user_response?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          category?: string | null
+          created_at?: string
+          expected_answer?: string | null
+          id?: string
+          interview_id?: string
+          question_text?: string
+          score?: number | null
+          user_response?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_analytics: {
+        Row: {
+          average_score: number | null
+          best_score: number | null
+          created_at: string
+          id: string
+          last_interview_date: string | null
+          preferred_categories: string[] | null
+          streak_days: number | null
+          total_interviews: number | null
+          total_practice_time: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_score?: number | null
+          best_score?: number | null
+          created_at?: string
+          id?: string
+          last_interview_date?: string | null
+          preferred_categories?: string[] | null
+          streak_days?: number | null
+          total_interviews?: number | null
+          total_practice_time?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_score?: number | null
+          best_score?: number | null
+          created_at?: string
+          id?: string
+          last_interview_date?: string | null
+          preferred_categories?: string[] | null
+          streak_days?: number | null
+          total_interviews?: number | null
+          total_practice_time?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
