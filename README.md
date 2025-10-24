@@ -1,3 +1,36 @@
+# PrepWise AI Coach
+
+## Development
+
+- Create a `.env` (or set env vars) for the server:
+  - `GEMINI_API_KEY` (optional; if missing, AI endpoints return graceful defaults)
+  - `PORT=3001` (optional)
+
+- Start dev:
+
+```
+npm install
+npm run dev
+```
+
+This runs the Vite app on 8080 and an Express server on 3001 with a proxy for `/api/*`.
+
+## Vapi Setup
+
+- Go to Profile → API Keys in the app and save your Vapi API key.
+- Optionally set env vars in `.env` for the client:
+  - `VITE_VAPI_API_KEY`
+  - `VITE_VAPI_ASSISTANT_ID`
+
+## Backend
+
+Endpoints provided:
+- `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- `GET/PUT /api/profile/:id`
+- `POST /api/ai/feedback`, `POST /api/ai/questions`
+
+Note: This uses in-memory storage for dev. Replace with a database for production.
+
 Follow these steps:
 
 ```sh

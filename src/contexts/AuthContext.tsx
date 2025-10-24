@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
 
 export type Profile = {
   id: string
@@ -17,14 +15,13 @@ export type Profile = {
 }
 
 interface AuthContextType {
-  user: User | null
+  user: { id: string; email: string } | null
   profile: Profile | null
-  session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, fullName: string) => Promise<any>
-  signIn: (email: string, password: string) => Promise<any>
-  signInWithGoogle: () => Promise<any>
-  signInWithGitHub: () => Promise<any>
+  signUp: (email: string, password: string, fullName: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => void
+  signInWithGitHub: () => void
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<Profile>) => Promise<void>
 }
@@ -32,151 +29,115 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
+    const bootstrap = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+          if (data.user?.id) {
+            await fetchProfile(data.user.id)
+          }
+        }
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      } else {
-        setProfile(null)
-      }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    }
+    bootstrap()
   }, [])
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error)
-        return
+      const res = await fetch(`/api/profile/${userId}`, { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      const profile: Profile = {
+        id: data.id,
+        email: user?.email || '',
+        full_name: data.full_name,
+        avatar_url: data.avatar_url,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        interview_count: data.interview_count ?? 0,
+        total_practice_time: data.total_practice_time ?? 0,
+        skill_level: (data.skill_level as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
+        preferred_industries: data.preferred_industries ?? [],
+        notification_preferences: data.notification_preferences ?? {}
       }
-
-      if (data) {
-        const profile: Profile = {
-          id: data.id,
-          email: user?.email || '',
-          full_name: data.full_name,
-          avatar_url: data.avatar_url,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-          interview_count: 0,
-          total_practice_time: 0,
-          skill_level: (data.experience_level as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
-          preferred_industries: [],
-          notification_preferences: {}
-        }
-        setProfile(profile)
-      }
+      setProfile(profile)
     } catch (error) {
       console.error('Error fetching profile:', error)
     }
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        }
-      }
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, fullName })
     })
-
-    if (error) throw error
-
-    // Profile will be created by database trigger once migration is applied
-
-    return data
+    if (!res.ok) {
+      const t = await res.text().catch(() => '')
+      throw new Error(t || 'Sign up failed')
+    }
+    const data = await res.json()
+    setUser(data.user)
+    await fetchProfile(data.user.id)
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password })
     })
-
-    if (error) throw error
-    return data
+    if (!res.ok) {
+      const t = await res.text().catch(() => '')
+      throw new Error(t || 'Login failed')
+    }
+    const data = await res.json()
+    setUser(data.user)
+    await fetchProfile(data.user.id)
   }
 
-  const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
-    if (error) throw error
-    return data
+  // Social auth functions
+  const signInWithGoogle = () => {
+    window.location.href = '/api/auth/google'
   }
 
-  const signInWithGitHub = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
-    if (error) throw error
-    return data
+  const signInWithGitHub = () => {
+    window.location.href = '/api/auth/github'
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    if (!res.ok) throw new Error('Logout failed')
+    setUser(null)
+    setProfile(null)
   }
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) throw new Error('No user logged in')
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: updates.full_name,
-          avatar_url: updates.avatar_url
-        })
-        .eq('user_id', user.id)
-
-      if (error) throw error
-
-      setProfile(prev => prev ? { ...prev, ...updates } : null)
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      throw error
-    }
+    const res = await fetch(`/api/profile/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updates)
+    })
+    if (!res.ok) throw new Error('Failed to update profile')
+    setProfile(prev => prev ? { ...prev, ...updates } : null)
   }
 
   const value = {
     user,
     profile,
-    session,
     loading,
     signUp,
     signIn,

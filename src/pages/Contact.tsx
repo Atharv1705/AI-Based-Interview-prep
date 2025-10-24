@@ -63,7 +63,7 @@ const Contact = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <Card className="glass-card">
+              <Card className="glass-card hover-lift interactive-scale">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-primary" />
@@ -151,7 +151,7 @@ const Contact = () => {
             {/* Contact Information */}
             <div className="space-y-6">
               {/* Contact Details */}
-              <Card className="glass-card">
+              <Card className="glass-card hover-lift interactive-scale">
                 <CardHeader>
                   <CardTitle>Contact Information</CardTitle>
                   <CardDescription>
@@ -195,7 +195,7 @@ const Contact = () => {
               </Card>
 
               {/* Support Hours */}
-              <Card className="glass-card">
+              <Card className="glass-card hover-lift interactive-scale">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-primary" />

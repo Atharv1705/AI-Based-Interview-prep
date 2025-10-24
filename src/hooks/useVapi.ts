@@ -29,47 +29,67 @@ export const useVapi = (): VapiHookReturn => {
   const [transcript, setTranscript] = useState<string[]>([]);
 
   useEffect(() => {
-    // Initialize Vapi with the provided API key
-    const vapiInstance = new Vapi('fbf6b826-fc14-4c0f-b82c-7b9665b4cd41');
-    
-    // Set up event listeners
-    vapiInstance.on('call-start', () => {
-      console.log('Call started');
-      setIsConnected(true);
-      setIsLoading(false);
-    });
-
-    vapiInstance.on('call-end', () => {
-      console.log('Call ended');
-      setIsConnected(false);
-      setIsLoading(false);
-    });
-
-    vapiInstance.on('message', (message: any) => {
-      if (message.type === 'transcript') {
-        console.log(`${message.role}: ${message.transcript}`);
-        setTranscript(prev => [...prev, `${message.role}: ${message.transcript}`]);
-        
-        // Extract user information from transcript
-        if (message.role === 'user') {
-          extractUserInfo(message.transcript);
+    // Initialize Vapi with API key from localStorage, env, or project default
+    (async () => {
+      // Prefer server-issued token
+      let apiKey = '';
+      try {
+        const res = await fetch('/api/vapi/token', { method: 'POST', credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          apiKey = data.apiKey || '';
         }
+      } catch {}
+      if (!apiKey) {
+        apiKey =
+          localStorage.getItem('vapi_api_key') ||
+          (import.meta as any).env?.VITE_VAPI_API_KEY ||
+          'fbf6b826-fc14-4c0f-b82c-7b9665b4cd41';
       }
-    });
-
-    vapiInstance.on('error', (error: any) => {
-      console.error('Vapi error:', error);
-      setIsLoading(false);
-      setIsConnected(false);
-    });
-
-    setVapi(vapiInstance);
-
-    return () => {
-      if (vapiInstance) {
-        vapiInstance.stop();
+      if (!apiKey) {
+        console.warn('Vapi API key is not set. Save it in Profile > API Keys or set VITE_VAPI_API_KEY.');
       }
-    };
+      const vapiInstance = new Vapi(apiKey || '');
+    
+      // Set up event listeners
+      vapiInstance.on('call-start', () => {
+        console.log('Call started');
+        setIsConnected(true);
+        setIsLoading(false);
+      });
+
+      vapiInstance.on('call-end', () => {
+        console.log('Call ended');
+        setIsConnected(false);
+        setIsLoading(false);
+      });
+
+      vapiInstance.on('message', (message: any) => {
+        if (message.type === 'transcript') {
+          console.log(`${message.role}: ${message.transcript}`);
+          setTranscript(prev => [...prev, `${message.role}: ${message.transcript}`]);
+          
+          // Extract user information from transcript
+          if (message.role === 'user') {
+            extractUserInfo(message.transcript);
+          }
+        }
+      });
+
+      vapiInstance.on('error', (error: any) => {
+        console.error('Vapi error:', error);
+        setIsLoading(false);
+        setIsConnected(false);
+      });
+
+      setVapi(vapiInstance);
+
+      return () => {
+        try {
+          vapiInstance?.stop();
+        } catch {}
+      };
+    })();
   }, []);
 
   const extractUserInfo = useCallback((text: string) => {
@@ -122,8 +142,23 @@ export const useVapi = (): VapiHookReturn => {
     setTranscript([]);
     
     try {
-      // Start voice conversation with the specified assistant ID
-      await vapi.start('c010d2e8-db16-4255-aaa2-2b3391583ef4');
+      // Configure assistant for mock interview: job context from UI storage if present
+      const assistantId =
+        localStorage.getItem('vapi_assistant_id') ||
+        (import.meta as any).env?.VITE_VAPI_ASSISTANT_ID ||
+        'c010d2e8-db16-4255-aaa2-2b3391583ef4';
+
+      const jobTitle = localStorage.getItem('mock_job_title') || 'Software Engineer';
+      const company = localStorage.getItem('mock_company') || 'Tech Corp';
+      const difficulty = localStorage.getItem('mock_difficulty') || 'medium';
+
+      await vapi.start(assistantId || '', {
+        metadata: {
+          jobTitle,
+          company,
+          difficulty,
+        },
+      } as any);
     } catch (error) {
       console.error('Failed to start call:', error);
       setIsLoading(false);

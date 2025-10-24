@@ -1,5 +1,4 @@
-// Re-export the properly configured supabase client
-export { supabase } from "@/integrations/supabase/client";
+// Supabase removed. This module now only exports shared types.
 
 export type Profile = {
   id: string

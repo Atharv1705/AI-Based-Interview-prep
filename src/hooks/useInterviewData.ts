@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { Database } from '@/integrations/supabase/types'
 
 // Define types based on the database schema
 type Interview = {
@@ -10,7 +8,7 @@ type Interview = {
   title: string
   type: 'technical' | 'behavioral' | 'case_study' | 'general'
   industry: string
-  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  difficulty: 'easy' | 'medium' | 'hard'
   duration: number
   score: number | null
   feedback: any | null
@@ -24,7 +22,7 @@ type Question = {
   id: string
   category: string
   industry: string
-  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  difficulty: 'easy' | 'medium' | 'hard'
   question_text: string
   expected_keywords: string[]
   sample_answer: string | null
@@ -41,49 +39,25 @@ export const useInterviewData = () => {
 
   const fetchInterviews = async () => {
     if (!user) return
-
     try {
-      // Mock interviews until database is ready
-      const mockInterviews: Interview[] = [
-        {
-          id: '1',
-          user_id: user.id,
-          title: 'Technical Interview - Frontend Developer',
-          type: 'technical',
-          industry: 'Technology',
-          difficulty: 'intermediate',
-          duration: 45,
-          score: 85,
-          feedback: { strengths: ['Good problem solving'], areas: ['Communication'] },
-          transcript: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          status: 'completed'
-        }
-      ]
-      setInterviews(mockInterviews)
+      const res = await fetch('/api/interviews', { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setInterviews(data as any)
+      }
     } catch (err: any) {
       setError(err.message)
     }
   }
 
-  const fetchQuestions = async (category?: string, industry?: string, difficulty?: string) => {
+  const fetchQuestions = async (interviewId?: string) => {
     try {
-      // Mock questions until database is ready
-      const mockQuestions: Question[] = [
-        {
-          id: '1',
-          category: 'technical',
-          industry: 'Technology',
-          difficulty: 'intermediate',
-          question_text: 'Explain the difference between let, const, and var in JavaScript.',
-          expected_keywords: ['hoisting', 'scope', 'temporal dead zone'],
-          sample_answer: 'let and const are block-scoped while var is function-scoped...',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
-      setQuestions(mockQuestions)
+      if (!interviewId) return
+      const res = await fetch(`/api/interviews/${interviewId}/questions`, { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setQuestions(data as any)
+      }
     } catch (err: any) {
       setError(err.message)
     }
@@ -93,17 +67,16 @@ export const useInterviewData = () => {
     if (!user) throw new Error('User not authenticated')
 
     try {
-      // Mock creation until database is ready
-      const newInterview: Interview = {
-        id: Date.now().toString(),
-        user_id: user.id,
-        ...interviewData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      
-      setInterviews(prev => [newInterview, ...prev])
-      return newInterview
+      const res = await fetch('/api/interviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(interviewData)
+      })
+      if (!res.ok) throw new Error('Failed to create interview')
+      const data = await res.json()
+      setInterviews(prev => [data, ...prev])
+      return data as any
     } catch (err: any) {
       setError(err.message)
       throw err
@@ -112,13 +85,16 @@ export const useInterviewData = () => {
 
   const updateInterview = async (id: string, updates: Partial<Interview>) => {
     try {
-      // Mock update until database is ready
-      setInterviews(prev => prev.map(interview => 
-        interview.id === id ? { ...interview, ...updates, updated_at: new Date().toISOString() } : interview
-      ))
-      
-      const updatedInterview = interviews.find(i => i.id === id)
-      return updatedInterview
+      const res = await fetch(`/api/interviews/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updates)
+      })
+      if (!res.ok) throw new Error('Failed to update interview')
+      const data = await res.json()
+      setInterviews(prev => prev.map(i => i.id === id ? data : i))
+      return data as any
     } catch (err: any) {
       setError(err.message)
       throw err

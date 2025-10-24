@@ -33,12 +33,18 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+          <div className="flex items-center gap-2 font-bold text-xl">
+            <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="gradient-text">PrepWise</span>
-          </Link>
+            </Link>
+            {/* Theme toggle placed immediately after logo */}
+            <div className="ml-3">
+              <ThemeToggle size="icon" className="hover-lift z-50" aria-label="Toggle theme" />
+            </div>
+          </div>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
@@ -76,7 +82,6 @@ const Header = () => {
           
           {/* Right Side */}
           <div className="hidden md:flex items-center space-x-4">
-            <ThemeToggle />
             
             {user ? (
               <DropdownMenu>
@@ -183,7 +188,6 @@ const Header = () => {
                 Help
               </Link>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
-                <ThemeToggle />
                 {user ? (
                   <>
                     <Button variant="ghost" asChild>

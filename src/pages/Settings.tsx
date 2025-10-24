@@ -32,6 +32,9 @@ const Settings = () => {
     autoRecord: false,
     difficulty: 'medium'
   });
+  const [privacy, setPrivacy] = useState({ share_data: true, data_retention_months: 12 });
+
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
 
   useEffect(() => {
     if (userProfile) {
@@ -78,6 +81,58 @@ const Settings = () => {
     });
   };
 
+  const loadPrivacy = async () => {
+    try {
+      const res = await fetch('/api/privacy', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setPrivacy({
+          share_data: !!data.share_data,
+          data_retention_months: Number(data.data_retention_months) || 12,
+        });
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    loadPrivacy();
+  }, []);
+
+  const handleSavePrivacy = async () => {
+    try {
+      const res = await fetch('/api/privacy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(privacy),
+      });
+      if (!res.ok) throw new Error('Failed to save privacy settings');
+      toast({ title: 'Privacy Updated', description: 'Your privacy settings have been saved.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to save privacy settings', variant: 'destructive' });
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwords.next || passwords.next !== passwords.confirm) {
+      toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' });
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ oldPassword: passwords.current, newPassword: passwords.next }),
+      });
+      if (!res.ok) throw new Error('Failed to change password');
+      setPasswords({ current: '', next: '', confirm: '' });
+      toast({ title: 'Password Updated', description: 'Your password has been changed.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to change password', variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -120,7 +175,7 @@ const Settings = () => {
 
           {/* API & Integration */}
           <TabsContent value="api" className="space-y-6">
-            <Card className="glass-card">
+            <Card className="glass-card hover-lift interactive-scale">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Key className="w-5 h-5 text-primary" />
@@ -179,7 +234,7 @@ const Settings = () => {
 
           {/* Profile */}
           <TabsContent value="profile" className="space-y-6">
-            <Card className="glass-card">
+            <Card className="glass-card hover-lift interactive-scale">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5 text-primary" />
@@ -269,7 +324,7 @@ const Settings = () => {
 
           {/* Preferences */}
           <TabsContent value="preferences" className="space-y-6">
-            <Card className="glass-card">
+            <Card className="glass-card hover-lift interactive-scale">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="w-5 h-5 text-primary" />
@@ -362,7 +417,7 @@ const Settings = () => {
 
           {/* Security */}
           <TabsContent value="security" className="space-y-6">
-            <Card className="glass-card">
+            <Card className="glass-card hover-lift interactive-scale">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="w-5 h-5 text-primary" />
@@ -376,7 +431,27 @@ const Settings = () => {
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-medium mb-2">Password</h4>
-                    <Button variant="outline" className="w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Input
+                        type="password"
+                        placeholder="Current password"
+                        value={passwords.current}
+                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="New password"
+                        value={passwords.next}
+                        onChange={(e) => setPasswords({ ...passwords, next: e.target.value })}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Confirm new password"
+                        value={passwords.confirm}
+                        onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                      />
+                    </div>
+                    <Button variant="outline" className="w-full mt-2" onClick={handleChangePassword}>
                       Change Password
                     </Button>
                   </div>
@@ -397,16 +472,53 @@ const Settings = () => {
 
                   <div>
                     <h4 className="font-medium mb-2">Data Privacy</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start">
-                        Download My Data
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        Privacy Settings
-                      </Button>
-                      <Button variant="destructive" className="w-full justify-start">
-                        Delete Account
-                      </Button>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded border">
+                        <div>
+                          <p className="font-medium">Share anonymized usage data</p>
+                          <p className="text-sm text-muted-foreground">Helps improve the product</p>
+                        </div>
+                        <Switch
+                          checked={privacy.share_data}
+                          onCheckedChange={(checked) => setPrivacy({ ...privacy, share_data: checked })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Data Retention (months)</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={36}
+                          value={privacy.data_retention_months}
+                          onChange={(e) => setPrivacy({ ...privacy, data_retention_months: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={async () => {
+                            const res = await fetch('/api/account/export', { credentials: 'include' });
+                            if (res.ok) {
+                              const blob = await res.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = 'my_data.json';
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                            }
+                          }}
+                        >
+                          Download My Data
+                        </Button>
+                        <Button variant="outline" className="w-full" onClick={handleSavePrivacy}>
+                          Save Privacy
+                        </Button>
+                        <Button variant="destructive" className="w-full">
+                          Delete Account
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

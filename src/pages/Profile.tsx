@@ -1,27 +1,23 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Brain, User, Settings, Key, Bell, Shield, ArrowLeft, Save, Upload } from "lucide-react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 
 const Profile = () => {
   const { user, profile: userProfile, updateProfile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState({
-    name: "",
+    full_name: "",
     email: "",
     company: "",
     role: "",
@@ -34,16 +30,17 @@ const Profile = () => {
       reminders: false
     }
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (userProfile && user) {
       setProfile({
-        name: userProfile.full_name || "",
+        full_name: userProfile.full_name || "",
         email: user.email || "",
-        company: "",
-        role: "",
+        company: userProfile.company || "",
+        role: userProfile.role || "",
         experience: userProfile.skill_level || "beginner",
-        bio: "",
+        bio: userProfile.bio || "",
         vapiApiKey: localStorage.getItem('vapi_api_key') || "",
         notifications: {
           email: true,
@@ -51,33 +48,83 @@ const Profile = () => {
           reminders: false
         }
       });
+      setAvatarUrl(userProfile.avatar_url);
     }
   }, [userProfile, user]);
 
-  const handleSave = async () => {
-    if (!user) return;
-    
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, or GIF).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: profile.name,
-          company: profile.company,
-          role: profile.role,
-          experience_level: profile.experience,
-          bio: profile.bio,
-        })
-        .eq('user_id', user.id);
+      const formData = new FormData();
+      formData.append('avatar', file);
 
-      if (error) throw error;
-
-      await updateProfile({
-        full_name: profile.name,
-        skill_level: profile.experience as 'beginner' | 'intermediate' | 'advanced'
+      const res = await fetch(`/api/profile/${user.id}/photo`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
       });
 
+      if (!res.ok) {
+        throw new Error('Failed to upload photo');
+      }
+
+      const data = await res.json();
+      setAvatarUrl(data.avatar_url);
+      
+      // Update the profile with new avatar URL
+      await updateProfile({
+        avatar_url: data.avatar_url,
+      });
+
+      toast({
+        title: "Photo uploaded successfully",
+        description: "Your profile picture has been updated.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload photo",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      await updateProfile({
+        full_name: profile.full_name,
+        avatar_url: avatarUrl,
+        company: profile.company,
+        role: profile.role,
+        skill_level: profile.experience as 'beginner' | 'intermediate' | 'advanced',
+        bio: profile.bio,
+      });
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
@@ -97,343 +144,209 @@ const Profile = () => {
     localStorage.setItem('vapi_api_key', profile.vapiApiKey);
     toast({
       title: "API Key Saved",
-      description: "Your Vapi.ai API key has been securely stored.",
+      description: "Your Vapi API key has been saved locally.",
     });
   };
 
+  if (!user) {
+    return <div>Please log in to view your profile.</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border glass-card-elevated">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild className="hover-lift">
-              <Link to="/dashboard">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center glow-effect">
-                <User className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold gradient-text">Profile & Settings</h1>
-                <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Profile
-              </TabsTrigger>
-              <TabsTrigger value="api-keys" className="flex items-center gap-2">
-                <Key className="w-4 h-4" />
-                API Keys
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                Notifications
-              </TabsTrigger>
-              <TabsTrigger value="security" className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                Security
-              </TabsTrigger>
-            </TabsList>
+        <div className="mb-8">
+          <Button variant="ghost" className="mb-4 hover-lift" asChild>
+            <Link to="/dashboard">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
+          <h1 className="text-4xl font-bold mb-2 gradient-text">Profile Settings</h1>
+          <p className="text-muted-foreground">Manage your account settings and preferences</p>
+        </div>
 
-            <TabsContent value="profile" className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="glass-card-elevated">
-                  <CardHeader>
-                    <CardTitle className="gradient-text">Personal Information</CardTitle>
-                    <CardDescription>Update your profile details and preferences</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Profile Picture */}
-                    <div className="flex items-center gap-6">
-                      <Avatar className="w-24 h-24">
-                        <AvatarImage src="/placeholder-avatar.jpg" />
-                        <AvatarFallback className="text-2xl bg-gradient-primary text-primary-foreground">
-                          {profile.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <Button variant="outline" className="hover-lift">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Change Photo
-                        </Button>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          JPG, PNG or GIF. Max size 2MB.
-                        </p>
-                      </div>
+        <Tabs defaultValue="personal" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 glass-card">
+            <TabsTrigger value="personal" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Personal
+            </TabsTrigger>
+            <TabsTrigger value="api-keys" className="flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              API Keys
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="privacy" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Privacy
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="personal" className="space-y-6">
+            <div className="max-w-4xl">
+              <Card className="glass-card-elevated hover-lift interactive-scale">
+                <CardHeader>
+                  <CardTitle className="gradient-text">Personal Information</CardTitle>
+                  <CardDescription>Update your profile details and preferences</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Profile Picture */}
+                  <div className="flex items-center gap-6">
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={avatarUrl || "/placeholder-avatar.jpg"} />
+                      <AvatarFallback className="text-2xl bg-gradient-primary text-primary-foreground">
+                        {profile.full_name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <input
+                        type="file"
+                        id="photo-upload"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="hover-lift"
+                        onClick={() => document.getElementById('photo-upload')?.click()}
+                        disabled={loading}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {loading ? 'Uploading...' : 'Change Photo'}
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        JPG, PNG or GIF. Max size 2MB.
+                      </p>
                     </div>
+                  </div>
 
-                    <Separator />
+                  <Separator />
 
-                    {/* Form Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input
-                          id="name"
-                          value={profile.name}
-                          onChange={(e) => setProfile({...profile, name: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={profile.email}
-                          onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="company">Company</Label>
-                        <Input
-                          id="company"
-                          value={profile.company}
-                          onChange={(e) => setProfile({...profile, company: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="role">Current Role</Label>
-                        <Input
-                          id="role"
-                          value={profile.role}
-                          onChange={(e) => setProfile({...profile, role: e.target.value})}
-                        />
-                      </div>
-                    </div>
-
+                  {/* Form Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        placeholder="Tell us about yourself..."
-                        value={profile.bio}
-                        onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                        rows={4}
+                      <Label htmlFor="full_name">Full Name</Label>
+                      <Input
+                        id="full_name"
+                        value={profile.full_name}
+                        onChange={(e) => setProfile({...profile, full_name: e.target.value})}
                       />
                     </div>
-
-                    <div className="flex justify-end">
-                      <Button onClick={handleSave} disabled={loading} className="bg-gradient-primary hover-lift">
-                        <Save className="w-4 h-4 mr-2" />
-                        {loading ? 'Saving...' : 'Save Changes'}
-                      </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profile.email}
+                        disabled
+                        className="bg-muted/50"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="api-keys" className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="glass-card-elevated">
-                  <CardHeader>
-                    <CardTitle className="gradient-text">API Configuration</CardTitle>
-                    <CardDescription>Configure your AI service API keys</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Brain className="w-5 h-5 text-primary" />
-                          <h3 className="font-semibold">Vapi.ai Integration</h3>
-                          <Badge variant="secondary">Voice AI</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Connect your Vapi.ai account to enable voice-based interviews and conversations.
-                        </p>
-                        <div className="space-y-2">
-                          <Label htmlFor="vapi-key">Vapi.ai API Key</Label>
-                          <Input
-                            id="vapi-key"
-                            type="password"
-                            placeholder="Enter your Vapi.ai API key"
-                            value={profile.vapiApiKey}
-                            onChange={(e) => setProfile({...profile, vapiApiKey: e.target.value})}
-                          />
-                        </div>
-                        <Button 
-                          onClick={handleApiKeySave} 
-                          className="mt-4 bg-gradient-primary hover-lift"
-                          size="sm"
-                        >
-                          Save API Key
-                        </Button>
-                      </div>
-
-                      <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Settings className="w-5 h-5 text-accent" />
-                          <h3 className="font-semibold">OpenAI Integration</h3>
-                          <Badge variant="outline">Coming Soon</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Direct OpenAI integration for custom AI models and advanced features.
-                        </p>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="company">Company</Label>
+                      <Input
+                        id="company"
+                        value={profile.company}
+                        onChange={(e) => setProfile({...profile, company: e.target.value})}
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="notifications" className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="glass-card-elevated">
-                  <CardHeader>
-                    <CardTitle className="gradient-text">Notification Preferences</CardTitle>
-                    <CardDescription>Choose how you want to be notified</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">Email Notifications</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Receive email updates about your interviews
-                          </p>
-                        </div>
-                        <Switch
-                          checked={profile.notifications.email}
-                          onCheckedChange={(checked) => 
-                            setProfile({
-                              ...profile,
-                              notifications: { ...profile.notifications, email: checked }
-                            })
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">Interview Reminders</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Get reminded about upcoming practice sessions
-                          </p>
-                        </div>
-                        <Switch
-                          checked={profile.notifications.interview}
-                          onCheckedChange={(checked) => 
-                            setProfile({
-                              ...profile,
-                              notifications: { ...profile.notifications, interview: checked }
-                            })
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">Weekly Progress</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Weekly summary of your interview performance
-                          </p>
-                        </div>
-                        <Switch
-                          checked={profile.notifications.reminders}
-                          onCheckedChange={(checked) => 
-                            setProfile({
-                              ...profile,
-                              notifications: { ...profile.notifications, reminders: checked }
-                            })
-                          }
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Current Role</Label>
+                      <Input
+                        id="role"
+                        value={profile.role}
+                        onChange={(e) => setProfile({...profile, role: e.target.value})}
+                      />
                     </div>
+                  </div>
 
-                    <div className="flex justify-end">
-                      <Button onClick={handleSave} className="bg-gradient-primary hover-lift">
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Preferences
-                      </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      placeholder="Tell us about yourself..."
+                      value={profile.bio}
+                      onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={handleSave} disabled={loading} className="bg-gradient-primary hover-lift">
+                      <Save className="w-4 h-4 mr-2" />
+                      {loading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="api-keys" className="space-y-6">
+            <div className="max-w-4xl">
+              <Card className="glass-card-elevated hover-lift interactive-scale">
+                <CardHeader>
+                  <CardTitle className="gradient-text">API Configuration</CardTitle>
+                  <CardDescription>Configure your AI service API keys</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="vapi-api-key">Vapi API Key</Label>
+                      <Input
+                        id="vapi-api-key"
+                        type="password"
+                        value={profile.vapiApiKey}
+                        onChange={(e) => setProfile({...profile, vapiApiKey: e.target.value})}
+                        placeholder="Enter your Vapi API key"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Your API key is stored locally and never sent to our servers
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
+                    <Button onClick={handleApiKeySave} className="bg-gradient-primary hover-lift">
+                      <Key className="w-4 h-4 mr-2" />
+                      Save API Key
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-            <TabsContent value="security" className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="glass-card-elevated">
-                  <CardHeader>
-                    <CardTitle className="gradient-text">Security Settings</CardTitle>
-                    <CardDescription>Manage your account security</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium mb-2">Change Password</h3>
-                        <div className="space-y-2">
-                          <Input type="password" placeholder="Current password" />
-                          <Input type="password" placeholder="New password" />
-                          <Input type="password" placeholder="Confirm new password" />
-                        </div>
-                        <Button variant="outline" className="mt-2 hover-lift">
-                          Update Password
-                        </Button>
-                      </div>
+          <TabsContent value="notifications" className="space-y-6">
+            <div className="max-w-4xl">
+              <Card className="glass-card-elevated hover-lift interactive-scale">
+                <CardHeader>
+                  <CardTitle className="gradient-text">Notification Preferences</CardTitle>
+                  <CardDescription>Choose how you want to be notified</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Notification settings coming soon...</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-                      <Separator />
-
-                      <div>
-                        <h3 className="font-medium mb-2">Two-Factor Authentication</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Add an extra layer of security to your account
-                        </p>
-                        <Button variant="outline" className="hover-lift">
-                          Enable 2FA
-                        </Button>
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <h3 className="font-medium mb-2 text-destructive">Danger Zone</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Permanently delete your account and all associated data
-                        </p>
-                        <Button variant="destructive" className="hover-lift">
-                          Delete Account
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-          </Tabs>
-        </div>
+          <TabsContent value="privacy" className="space-y-6">
+            <div className="max-w-4xl">
+              <Card className="glass-card-elevated hover-lift interactive-scale">
+                <CardHeader>
+                  <CardTitle className="gradient-text">Privacy & Security</CardTitle>
+                  <CardDescription>Manage your privacy settings and account security</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Privacy settings coming soon...</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -281,7 +281,7 @@ const Help = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="glass-card-elevated">
+                <Card className="glass-card-elevated hover-lift interactive-scale">
                   <CardHeader>
                     <CardTitle className="gradient-text">Frequently Asked Questions</CardTitle>
                     <CardDescription>Find answers to common questions about PrepWise</CardDescription>
@@ -315,14 +315,14 @@ const Help = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="glass-card-elevated">
+                <Card className="glass-card-elevated hover-lift interactive-scale">
                   <CardHeader>
                     <CardTitle className="gradient-text">Video Tutorials</CardTitle>
                     <CardDescription>Step-by-step guides to master PrepWise</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {tutorials.map((tutorial, index) => (
-                      <div key={index} className="border border-border/50 rounded-lg p-6 glass-card">
+                      <div key={index} className="border border-border/50 rounded-lg p-6 glass-card hover-lift interactive-scale">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-xl font-semibold mb-2">{tutorial.title}</h3>
@@ -411,7 +411,7 @@ const Help = () => {
 
                 {/* Contact Information */}
                 <div className="space-y-6">
-                  <Card className="glass-card-elevated">
+                  <Card className="glass-card-elevated hover-lift interactive-scale">
                     <CardHeader>
                       <CardTitle className="gradient-text">Other Ways to Reach Us</CardTitle>
                     </CardHeader>

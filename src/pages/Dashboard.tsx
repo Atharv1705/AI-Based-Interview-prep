@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import InterviewAnalytics from "@/components/advanced/InterviewAnalytics";
 import VoiceAgent from "@/components/voice/VoiceAgent";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 // Mock data
 const recentInterviews = [
@@ -39,7 +40,7 @@ const recentInterviews = [
 ];
 
 const Dashboard = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [userInfo, setUserInfo] = useState<any>({});
   const [showAnalytics, setShowAnalytics] = useState(false);
   const userName = profile?.full_name || user?.email?.split('@')[0] || "User";
@@ -94,6 +95,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
+              <ThemeToggle size="icon" className="hover-lift" />
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -107,13 +109,16 @@ const Dashboard = () => {
                   <Settings className="w-5 h-5" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" asChild className="hover-lift">
-                <Link to="/" onClick={async () => {
-                  const { signOut } = useAuth();
+              <Button variant="ghost" size="icon" className="hover-lift" onClick={async () => {
+                try {
                   await signOut();
-                }}>
-                  <LogOut className="w-5 h-5" />
-                </Link>
+                  // simple redirect after sign-out
+                  window.location.href = '/';
+                } catch (err) {
+                  console.error('Sign out failed', err);
+                }
+              }}>
+                <LogOut className="w-5 h-5" />
               </Button>
             </motion.div>
           </div>

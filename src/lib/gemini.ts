@@ -1,19 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const API_KEY = "AIzaSyBMBUXdD-7-V2iH4RC_DMrWok20lBhzerU";
-
-const genAI = new GoogleGenerativeAI(API_KEY);
-
-export const geminiModel = genAI.getGenerativeModel({ 
-  model: "gemini-2.0-flash-exp" 
-});
+// Client no longer calls Gemini directly. The server handles AI calls securely.
 
 export const generateInterviewFeedback = async (
   question: string, 
   userResponse: string
 ): Promise<{ feedback: string; score: number; suggestions: string[] }> => {
   try {
-    const response = await fetch('https://rrlyvpfefbcbspmaffjr.supabase.co/functions/v1/ai-interview-feedback-gemini', {
+    const response = await fetch('/api/ai/feedback', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -47,7 +39,7 @@ export const generateInterviewQuestions = async (
   count: number = 5
 ): Promise<Array<{ question: string; category: string; expected_answer: string }>> => {
   try {
-    const response = await fetch('https://rrlyvpfefbcbspmaffjr.supabase.co/functions/v1/generate-interview-questions-gemini', {
+    const response = await fetch('/api/ai/questions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

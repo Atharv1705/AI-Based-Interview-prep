@@ -40,11 +40,17 @@ const NewInterview = () => {
     // Simulate interview creation
     setTimeout(() => {
       setIsLoading(false);
+      // Persist basic context for voice agent
+      const jobTitle = (document.getElementById('jobTitle') as HTMLInputElement)?.value || '';
+      const company = (document.getElementById('company') as HTMLInputElement)?.value || '';
+      localStorage.setItem('mock_job_title', jobTitle);
+      localStorage.setItem('mock_company', company);
+      localStorage.setItem('mock_difficulty', 'medium');
       toast({
         title: "Interview Created!",
         description: "Your AI mock interview is ready. Starting session...",
       });
-      navigate('/interview/1'); // Navigate to interview session
+      navigate('/interview/1/session');
     }, 2000);
   };
 

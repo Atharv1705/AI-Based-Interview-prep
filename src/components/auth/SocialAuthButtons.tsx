@@ -1,44 +1,31 @@
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { Github, Chrome } from "lucide-react"
 import { useState } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 
 export const SocialAuthButtons = () => {
-  const { signInWithGoogle, signInWithGitHub } = useAuth()
   const { toast } = useToast()
+  const { signInWithGoogle, signInWithGitHub } = useAuth()
   const [loading, setLoading] = useState<string | null>(null)
 
   const handleSocialAuth = async (provider: 'google' | 'github') => {
     setLoading(provider)
     try {
       if (provider === 'google') {
-        await signInWithGoogle()
-      } else {
-        await signInWithGitHub()
+        signInWithGoogle()
+      } else if (provider === 'github') {
+        signInWithGitHub()
       }
-      toast({
-        title: "Success",
-        description: `Signing in with ${provider}...`,
-      })
     } catch (error: any) {
       const errorMessage = error.message || `Failed to sign in with ${provider}`;
       console.error('Social auth error:', error);
       
-      // Check for specific error codes
-      if (error.message?.includes('provider is not enabled')) {
-        toast({
-          title: "Provider Not Enabled",
-          description: `${provider} authentication is not enabled. Please contact support or use email authentication.`,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(null)
     }

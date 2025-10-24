@@ -36,14 +36,42 @@ export const InterviewSession = () => {
   const initializeSession = async () => {
     try {
       setIsLoading(true);
-      // Generate questions using Gemini AI
-      const generatedQuestions = await generateInterviewQuestions(
-        'Software Developer',
-        'Technology',
-        'medium',
-        5
-      );
+      // Generate questions using Gemini AI and persist server-side
+      const jobRole = localStorage.getItem('mock_job_title') || 'Software Developer';
+      const industry = 'Technology';
+      const difficulty: 'easy' | 'medium' | 'hard' = 'medium';
+      const generatedQuestions = await generateInterviewQuestions(jobRole, industry, difficulty, 5);
       setQuestions(generatedQuestions);
+
+      // Create interview record on server
+      if (user) {
+        const res = await fetch('/api/interviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ title: jobRole, company: localStorage.getItem('mock_company') || '', job_role: jobRole, industry, difficulty })
+        });
+        if (res.ok) {
+          const interview = await res.json();
+          // Persist each question on server
+          await Promise.all(
+            generatedQuestions.map((q) =>
+              fetch(`/api/interviews/${interview.id}/questions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  question_text: q.question,
+                  category: q.category,
+                  expected_answer: q.expected_answer,
+                }),
+              })
+            )
+          );
+          // Save interview id locally for subsequent updates
+          sessionStorage.setItem('active_interview_id', interview.id);
+        }
+      }
       setCurrentQuestion(generatedQuestions[0]?.question || 'Tell me about yourself.');
       toast({
         title: "Interview Started",
@@ -88,6 +116,25 @@ export const InterviewSession = () => {
         [questionIndex]: aiResponse
       }));
 
+      // Persist the answered question
+      const activeInterviewId = sessionStorage.getItem('active_interview_id');
+      if (activeInterviewId) {
+        // Fetch question list and update the last one with response/feedback/score
+        const listRes = await fetch(`/api/interviews/${activeInterviewId}/questions`, { credentials: 'include' });
+        if (listRes.ok) {
+          const list = await listRes.json();
+          const last = list[questionIndex];
+          if (last) {
+            await fetch(`/api/questions/${last.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ user_response: currentAnswer, ai_feedback: aiResponse.feedback, score: aiResponse.score }),
+            });
+          }
+        }
+      }
+
       if (questionIndex < questions.length - 1) {
         setQuestionIndex(questionIndex + 1);
         setCurrentQuestion(questions[questionIndex + 1].question);
@@ -116,13 +163,18 @@ export const InterviewSession = () => {
     setOverallScore(avgScore);
     
     try {
-      if (id && user) {
-        await updateInterview(id, {
-          score: avgScore,
-          feedback: feedback,
-          transcript: allAnswers.join('\n\n'),
-          status: 'completed',
-          duration
+      const activeInterviewId = sessionStorage.getItem('active_interview_id');
+      if (activeInterviewId && user) {
+        await fetch(`/api/interviews/${activeInterviewId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            overall_score: avgScore,
+            feedback: JSON.stringify(feedback || {}),
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+          }),
         });
       }
       
